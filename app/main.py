@@ -460,13 +460,74 @@ full_data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'full_dat
 with open(full_data_path, 'r', encoding='utf-8') as f:
     FULL_DATA = json.load(f)
 
-@app.route('/api/full-data', methods=['GET'])
-def get_full_data():
-    """Get full data from full_data.json"""
+@app.route('/api/full-data/<page_no>', methods=['GET'])
+def get_full_data(page_no):
+    """Get full data from full_data.json with pagination (50 items per page, posts prioritized)"""
     try:
+        # Convert page_no to integer and handle invalid input
+        try:
+            page = int(page_no)
+            if page < 1:
+                raise ValueError("Page number must be positive")
+        except ValueError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'timestamp': get_current_timestamp()
+            }), 400
+
+        items_per_page = 50
+        start_idx = (page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
+
+        posts = FULL_DATA['Posts']
+        comments = FULL_DATA['Comments']
+        posts_len = len(posts)
+        comments_len = len(comments)
+
+        # Get posts for this page
+        posts_slice = posts[start_idx:end_idx] if start_idx < posts_len else []
+        num_posts = len(posts_slice)
+
+        # If not enough posts, fill with comments
+        if num_posts < items_per_page:
+            # Calculate how many more items needed
+            remaining = items_per_page - num_posts
+            # Comments start index: if posts are exhausted, comments should start at (start_idx - posts_len)
+            comments_start = max(0, start_idx - posts_len)
+            comments_end = comments_start + remaining
+            comments_slice = comments[comments_start:comments_end] if comments_start < comments_len else []
+        else:
+            comments_slice = []
+
+        # If posts are exhausted for this page, fill with comments only
+        if num_posts == 0:
+            comments_start = start_idx - posts_len
+            comments_end = comments_start + items_per_page
+            comments_slice = comments[comments_start:comments_end] if comments_start < comments_len else []
+
+        # Combine for response
+        combined_items = posts_slice + comments_slice
+
+        # Calculate total pages based on total items (posts + comments)
+        total_items = posts_len + comments_len
+        total_pages = (total_items + items_per_page - 1) // items_per_page
+
+        data_to_send = {
+            'items': combined_items,
+            'pagination': {
+                'current_page': page,
+                'total_pages': total_pages,
+                'number_of_pages': total_pages,
+                'items_per_page': items_per_page,
+                'total_posts': posts_len,
+                'total_comments': comments_len
+            }
+        }
+
         return jsonify({
             'success': True,
-            'data': FULL_DATA,
+            'data': data_to_send,
             'timestamp': get_current_timestamp()
         })
     except Exception as e:
