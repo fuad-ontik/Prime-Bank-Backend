@@ -537,5 +537,95 @@ def get_full_data(page_no):
             'timestamp': get_current_timestamp()
         }), 500
 
+@app.route('/api/full-data/posts/<page_no>', methods=['GET'])
+def get_full_posts(page_no):
+    """Get paginated posts from full_data.json (50 per page)"""
+    try:
+        try:
+            page = int(page_no)
+            if page < 1:
+                raise ValueError("Page number must be positive")
+        except ValueError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'timestamp': get_current_timestamp()
+            }), 400
+
+        items_per_page = 25
+        posts = FULL_DATA['Posts']
+        posts_len = len(posts)
+        start_idx = (page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
+        posts_slice = posts[start_idx:end_idx] if start_idx < posts_len else []
+        total_pages = (posts_len + items_per_page - 1) // items_per_page
+
+        data_to_send = {
+            'items': posts_slice,
+            'pagination': {
+                'current_page': page,
+                'total_pages': total_pages,
+                'number_of_pages': total_pages,
+                'items_per_page': items_per_page,
+                'total_posts': posts_len
+            }
+        }
+        return jsonify({
+            'success': True,
+            'data': data_to_send,
+            'timestamp': get_current_timestamp()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': get_current_timestamp()
+        }), 500
+
+@app.route('/api/full-data/comments/<page_no>', methods=['GET'])
+def get_full_comments(page_no):
+    """Get paginated comments from full_data.json (50 per page)"""
+    try:
+        try:
+            page = int(page_no)
+            if page < 1:
+                raise ValueError("Page number must be positive")
+        except ValueError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'timestamp': get_current_timestamp()
+            }), 400
+
+        items_per_page = 25
+        comments = FULL_DATA['Comments']
+        comments_len = len(comments)
+        start_idx = (page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
+        comments_slice = comments[start_idx:end_idx] if start_idx < comments_len else []
+        total_pages = (comments_len + items_per_page - 1) // items_per_page
+
+        data_to_send = {
+            'items': comments_slice,
+            'pagination': {
+                'current_page': page,
+                'total_pages': total_pages,
+                'number_of_pages': total_pages,
+                'items_per_page': items_per_page,
+                'total_comments': comments_len
+            }
+        }
+        return jsonify({
+            'success': True,
+            'data': data_to_send,
+            'timestamp': get_current_timestamp()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': get_current_timestamp()
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
