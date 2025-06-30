@@ -5,7 +5,7 @@ python3 app/main.py &
 # Wait for the server to start
 sleep 5
 
-BASE_URL="http://localhost:5000"
+BASE_URL="http://localhost:8080"
 
 # List of endpoints to test
 declare -a ENDPOINTS=(
@@ -30,7 +30,9 @@ declare -a ENDPOINTS=(
   "/api/summary"
   "/api/search?q=test"
   "/api/dashboard-ai-overview"
-  "/api/full-data" 
+  "/api/full-data/posts/1"      # <-- Add this line
+  "/api/full-data/comments/1"   # <-- Add this line
+  "/api/full-data/1"
 )
 
 # Function to test each endpoint
